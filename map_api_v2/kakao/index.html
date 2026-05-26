@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>여러개 마커 표시하기</title>
+    <style>
+      /* [필수] 지도를 화면에 그리려면 '높이'가 무조건 지정되어야 합니다 */
+      .map {
+        height: 500px;
+      }
+
+      /* [필수] 세로로 나오는 리스트를 가로 메뉴 형태로 정렬하고 간격을 줍니다 */
+      .location {
+        display: flex;
+        gap: 20px;
+      }
+
+      /* [필수] 글씨를 마우스로 누를 수 있다는 신호(손가락 모양)를 사용자에게 줍니다 */
+      .location li {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrapper">
+      <ul class="location">
+        <li data-lat="37.5175066" data-lng="127.0473753">강남구청</li>
+        <li data-lat="37.566242" data-lng="126.9019425">마포구청</li>
+        <li data-lat="37.5509103" data-lng="126.8495742">강서구청</li>
+      </ul>
+      <div id="map" class="map"></div>
+    </div>
+
+    <script
+      type="text/javascript"
+      src="//dapi.kakao.com/v2/maps/sdk.js?appkey=f4ea786b1e592b86acaa899b5bdbc6d2"
+    ></script>
+    <script>
+      const locations = document.querySelectorAll(".location li");
+
+      // 1. 지도틀, 인포윈도우, 범위(Bounds) 객체를 간결하게 초기화
+      var map = new kakao.maps.Map(document.getElementById("map"), {
+        center: new kakao.maps.LatLng(37.566242, 126.9019425),
+        level: 5,
+      });
+      var infowindow = new kakao.maps.InfoWindow({ removable: true });
+      var bounds = new kakao.maps.LatLngBounds();
+
+      // 2. 마커 별 모양 이미지 설정
+      var markerImage = new kakao.maps.MarkerImage(
+        "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/markerStar.png",
+        new kakao.maps.Size(24, 35),
+      );
+
+      // 3. [최적화] HTML 글씨 리스트를 돌면서 데이터 추출, 마커 생성, 클릭 이벤트 바인딩을 한 번에 처리
+      locations.forEach(location => {
+        let lat = parseFloat(location.dataset.lat);
+        let lng = parseFloat(location.dataset.lng);
+        let title = location.innerText;
+        let pos = new kakao.maps.LatLng(lat, lng);
+
+        // 마커 생성 후 지도에 바로 배치
+        new kakao.maps.Marker({ map, position: pos, title, image: markerImage });
+
+        // 화면 자동 조정을 위해 3개 구청의 좌표 범위를 누적
+        bounds.extend(pos);
+
+        // 글씨 클릭 시 해당 위치로 화면을 부드럽게 이동하고 인포윈도우 열기
+        location.addEventListener("click", () => {
+          infowindow.setContent(`<div class="infoWindow"><h2>${title}</h2></div>`);
+          infowindow.setPosition(pos);
+          infowindow.open(map);
+          map.panTo(pos);
+        });
+      });
+
+      // 4. [과제 필수 조건] 처음 로딩될 때 3개 구청이 무조건 다 보이도록 지도 영역 최적화
+      map.setBounds(bounds);
+    </script>
+  </body>
+</html>
